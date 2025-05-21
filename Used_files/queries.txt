@@ -1,0 +1,296 @@
+--1. Plays info
+SELECT
+	(SELECT
+		COUNT(DISTINCT trackID)
+	FROM StreamingHistory) unique_songs,
+	(SELECT
+		COUNT(DISTINCT albumID)
+	FROM StreamingHistory) unique_albums,
+	(SELECT
+		COUNT(DISTINCT artistID)
+	 FROM StreamingHistory) unique_artists,
+	(SELECT
+		COUNT(DISTINCT genres)
+	 FROM artists
+	 WHERE genres<>'unknown') unique_genres,
+	(SELECT
+		ROUND(COUNT(1)*1.0/(SELECT COUNT(1) FROM StreamingHistory WHERE msPlayed>0),4)
+	 FROM StreamingHistory SH
+	 INNER JOIN tracks T
+	 ON SH.trackID = T.trackID
+	 WHERE SH.msPlayed*100.0/T.duration>=75
+	) Fully_enjoyed_songs,
+	(SELECT
+		ROUND(COUNT(1)*1.0/(SELECT COUNT(1) FROM StreamingHistory WHERE msPlayed>0),4)
+	 FROM StreamingHistory SH
+	 INNER JOIN tracks T
+	 ON SH.trackID = T.trackID
+	 WHERE SH.msPlayed>0 AND SH.msPlayed*100.0/T.duration<=15
+	) Skipped_songs
+
+--2. Top songs by minutes played
+WITH
+Most_played_tracks AS(
+	SELECT
+		*,
+		DENSE_RANK() OVER(ORDER BY time_played DESC) Ranking
+	FROM(
+		SELECT DISTINCT
+			artistName,
+			trackName,
+			trackID,
+			SUM(msPlayed) OVER(PARTITION BY trackID) time_played
+		FROM StreamingHistory
+	)
+)
+SELECT
+	artistName,
+	trackName,
+	trackID,
+	time_played/60000 minutes_played
+FROM Most_played_tracks 
+WHERE Ranking<=5
+
+--3. Top albums by minutes played
+WITH
+Most_played_albums AS(
+	SELECT
+		*,
+		DENSE_RANK() OVER(ORDER BY time_played DESC) Ranking
+	FROM(
+		SELECT DISTINCT
+			SH.artistName,
+			SH.albumName,
+			SH.albumID,
+			SUM(SH.msPlayed) OVER(PARTITION BY SH.albumID) time_played
+		FROM StreamingHistory SH
+		INNER JOIN albums A
+		ON SH.albumID = A.albumID
+		WHERE A.album_type='album'
+	)
+)
+SELECT
+	artistName,
+	albumName,
+	albumID,
+	time_played/60000 minutes_played
+FROM Most_played_albums
+WHERE Ranking<=5
+
+--4. Top artists by minutes played
+WITH
+Most_played_artists AS(
+	SELECT
+		*,
+		DENSE_RANK() OVER(ORDER BY time_played DESC) Ranking
+	FROM(
+		SELECT DISTINCT
+			artistName,
+			artistID,
+			SUM(msPlayed) OVER(PARTITION BY artistID) time_played
+		FROM StreamingHistory
+	)
+)
+SELECT
+	artistName,
+	artistID,
+	time_played/60000 minutes_played
+FROM Most_played_artists
+WHERE Ranking<=5
+
+--5. Yearly playtime
+SELECT
+	SUBSTR(startTime,1,4) years,
+	SUM(msPlayed)/60000 minutes_played
+FROM StreamingHistory
+GROUP BY years
+
+--6. Monthly playtime
+SELECT
+	years,
+	SUBSTR('JanFebMarAprMayJunJulAugSepOctNovDec',3*months-2,3) Months_by_name,
+	minutes_played
+FROM(
+SELECT
+	SUBSTR(startTime,1,4) years,
+	SUBSTR(startTime,6,2) months,
+	SUM(msPlayed)/60000 minutes_played
+FROM StreamingHistory
+GROUP BY years, months
+)
+
+--7. Most played song of each month
+WITH
+Most_played_track_each_month AS(
+	SELECT
+		*,
+		DENSE_RANK() OVER(PARTITION BY Years, Months ORDER BY milliseconds_played DESC) Ranking
+	FROM(
+		SELECT DISTINCT
+			SUBSTR(startTime,1,4) Years,
+			SUBSTR(startTime,6,2) Months,
+			artistName,
+			trackName,
+			SUM(msPlayed) OVER(PARTITION BY SUBSTR(startTime,1,4), SUBSTR(startTime,6,2), trackID) milliseconds_played
+		FROM StreamingHistory
+	)
+)
+SELECT
+	SUBSTR('JanFebMarAprMayJunJulAugSepOctNovDec',3*Months-2,3)||', '||Years Months_by_name,
+	artistName,
+	trackName,
+	milliseconds_played/60000 minutes_played
+FROM Most_played_track_each_month
+WHERE Ranking=1
+ORDER BY Years, Months
+
+--8. Plays_info_v2
+SELECT
+	(SELECT
+		SUM(msPlayed)/60000
+	 FROM StreamingHistory) minutes_on_spotify,
+	(SELECT
+		ROUND(COUNT(1)*1.0/(SELECT COUNT(DISTINCT artistID) FROM artists),4)
+	 FROM artists
+	 WHERE genres='unknown') Genderless_artists,
+	(SELECT
+		ROUND(COUNT(1)*1.0/(SELECT COUNT(1) FROM StreamingHistory WHERE msPlayed>0),4)
+	FROM StreamingHistory SH
+	INNER JOIN tracks T
+	ON SH.trackID = T.trackID
+	WHERE SH.msPlayed>0 AND T.explicit=True) Explicit_plays
+
+--9. Release category comparison
+SELECT
+	A.album_type||'s' AS "Musical releases (minutes played)",
+	SUM(SH.msPlayed)/60000 minutes_played
+FROM StreamingHistory SH
+INNER JOIN albums A
+ON SH.albumID = A.albumID
+GROUP BY A.album_type
+
+--10. The old soul in me
+WITH
+Most_played_tracks AS(
+	SELECT
+		*,
+		DENSE_RANK() OVER(ORDER BY milliseconds_played DESC) Ranking
+	FROM(
+		SELECT DISTINCT
+			artistName,
+			trackName,
+			trackID,
+			albumID,
+			SUM(msPlayed) OVER(PARTITION BY trackID) milliseconds_played
+		FROM StreamingHistory
+	)
+)
+SELECT
+	MPT.artistName,
+	MPT.trackName,
+	MPT.trackID, 
+	A.release_date,
+	MPT.milliseconds_played/60000 minutes_played
+FROM Most_played_tracks MPT
+INNER JOIN albums A
+ON MPT.albumID = A.albumID
+WHERE MPT.Ranking<=50 AND STRFTIME('%Y', DATE()) - A.release_date>30
+
+--11. Top days for new artists
+WITH
+Date_appearances_of_each_artist AS(
+	SELECT DISTINCT
+		SUBSTR(startTime,1,10) Dates,
+		SH.artistName,
+		SH.artistID
+	FROM StreamingHistory SH
+	INNER JOIN tracks T
+	ON SH.trackID = T.trackID
+	WHERE SH.msPlayed*100.0/T.duration>15
+	GROUP BY Dates, SH.artistName
+),
+Days_with_most_new_artists AS(
+	SELECT
+		*,
+		DENSE_RANK() OVER(ORDER BY Number_of_new_artists DESC) Ranking
+	FROM(
+		SELECT
+			Dates,
+			COUNT(1) Number_of_new_artists
+		FROM Date_appearances_of_each_artist D
+		WHERE artistID NOT IN (SELECT DISTINCT artistID FROM Date_appearances_of_each_artist WHERE Dates<D.Dates)
+		GROUP BY Dates
+	)
+)
+SELECT * FROM Days_with_most_new_artists WHERE Ranking<=5
+
+--12. Decades playback comparison
+SELECT DISTINCT
+	SUBSTR(A.release_date,1,3)||'0s' Decade,
+	SUM(SH.msPlayed)/60000 minutes_played
+FROM StreamingHistory SH
+INNER JOIN albums A
+ON SH.albumID = A.albumID
+GROUP BY Decade
+
+--13. Daily genre trends
+WITH
+Characterizing_the_day AS(
+	SELECT
+		CASE
+			WHEN SUBSTR(startTime,12,5)>='00:00' AND SUBSTR(startTime,12,5)<'06:00' THEN 'Early morning'
+			WHEN SUBSTR(startTime,12,5)>='06:00' AND SUBSTR(startTime,12,5)<'12:00' THEN 'Morning'
+			WHEN SUBSTR(startTime,12,5)>='12:00' AND SUBSTR(startTime,12,5)<'18:00' THEN 'Afternoon'
+			ELSE 'Night' 
+		END AS 'Moment_of_the_day',
+		artistID,
+		msPlayed
+	FROM StreamingHistory
+),
+Moments_genres AS(
+	SELECT
+		Moment_of_the_day,
+		CASE
+			WHEN Moment_of_the_day='Early morning' THEN 1
+			WHEN Moment_of_the_day='Morning' THEN 2
+			WHEN Moment_of_the_day='Afternoon' THEN 3
+			ELSE 4
+		END AS 'MOTD',
+		genres,
+		minutes_played,
+		DENSE_RANK() OVER(PARTITION BY Moment_of_the_day ORDER BY minutes_played DESC) Ranking
+	FROM(
+		SELECT
+			CTD.Moment_of_the_day,
+			A.genres,
+			SUM(CTD.msPlayed)/60000 minutes_played
+		FROM Characterizing_the_day CTD
+		INNER JOIN artists A
+		ON CTD.artistID = A.artistID
+		WHERE A.genres<>'unknown'
+		GROUP BY CTD.Moment_of_the_day, A.genres
+	)
+)
+SELECT * FROM Moments_genres WHERE Ranking<=5
+
+--14. Time played by day of the week
+SELECT
+	CASE Day_number_week
+		WHEN 0 THEN 'Sunday'
+		WHEN 1 THEN 'Monday'
+		WHEN 2 THEN 'Tuesday'
+		WHEN 3 THEN 'Wednesday'
+		WHEN 4 THEN 'Thursday'
+		WHEN 5 THEN 'Friday'
+		ELSE 'Saturday'
+	END AS 'Weekdays',
+	Hour,
+	minutes_played
+FROM(
+	SELECT
+		CAST(STRFTIME('%w', SUBSTR(startTime,1,10)) AS INTEGER) Day_number_week,
+		SUBSTR(startTime,12,2) Hour,
+		SUM(msPlayed)/60000 minutes_played
+	FROM StreamingHistory
+	GROUP BY Day_number_week, Hour
+)
