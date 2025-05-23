@@ -16,7 +16,7 @@ if __name__ ==  '__main__':
         
     fileName = f'{path}Used_files\\queries.txt'
     
-    dbMethods = DTQC.DatabaseMethods(db)
+    dbMethods = DTAQC.DatabaseMethods(db)
     dbMethods.createDB()
     dbMethods.create_all_tables(inputPath)
     DTAQC.QueriesCreation(db).create_views_files(fileName, outputPath)
