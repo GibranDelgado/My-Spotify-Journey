@@ -22,9 +22,9 @@ This folder includes six Python scripts listed below:
   Defines a series of methods to make requests to the Spotify API to retrieve information about tracks, artists, albums, etc.
 
 - **Spotify_methods:**  
-  Contains helper methods to get additional information from the tracks in the streaming history, using the classes included in `Spotify_utilities`. These methods are divided into two categories:  
-  - Those that search a specific track in a list of results.  
-  - Those that try to match the most possible coincidences from a list of tracks.
+  Contains methods used to retrieve complementary information about the tracks that make up the streaming history, using the classes provided by the "Spotify_utilities" script. These methods are divided in two categories:  
+  - Those who search a specific track in a list of results.  
+  - Those that try to match as many tracks as posible from a list from a list of results.
 
 - **Spotify_data_extraction:**  
   In this script, additional track information is extracted in three stages:
@@ -40,5 +40,37 @@ This folder includes six Python scripts listed below:
   - **Third stage:**  
     Missing tracks from both methods are merged into a single list, which is then used to search the artist's full discography.
 
-  -- **Complementary information stage:**
-    
+  - **Complementary information stage:**  
+    In this stage, additional information about artists and albums was extracted using the IDs of the tracks obtained in the three previous stages.
+- **Getting_specific_query:**  
+  This script includes a method `number_of_queries()` that returns the number of queries from the `queries.txt` file, and a method `specific_query()`that returns a query based on a query number, passed as a parameter.
+
+- **Database_tables_and_queries_creation:**  
+  This script contains the methods to emulate a traditional relational database using SQLite.  
+  - First of all, the `createDB()` function creates a database based on the name given as a parameter.
+  - There is a private method `insert_df_as_table()` that reads a dataframe passed as a parameter and reinterprets each datatype of the dataframe as its equivalent in SQLite. Then it creates the table and inserts the dataframe's information into it.  
+  - The `create_all_tables()` method applies the private method `insert_df_as_table()` to every Excel file included in a specified folder path.  
+  - Once the tables have been generated and filled, it's time to generate the view files. These are created reading every query included in the `queries.txt` file, then being executed in the database and then the results are saved as an Excel file.
+
+## Get your own spotify data
+  - In the `"references"` section you will find a link to request your streaming history data. You will be able to download your data in a timelapse of five days approximately. Once you have downloaded your data, you will get a `"my_spotify_data"` zip file. The only file you will need from there is the `"StreamingHistory_music_0"` JSON file.
+
+## About the use
+  - Execute the "Main_python.py" script. This going to create a new `"Spotify_results"` folder, with the additional information about the tracks, albums and artists of your streaming history.  
+  `In the Main_python script there's a variable called "diffHoursUTC". This represents the difference hours from the UTC.`  
+  `If you want to use the UTC timezone, set this value to 0; otherwise, set this value according to the location of your preference.`
+
+  - Execute the "Main_sqlite.py" script. This going to create a new "Queries_results" folder, with the necessary views to create your customized Spotify wrapped dashboard.  
+  `If you want to add or modify a query, don't forget to keep the numerology followed in the document.`
+
+## Libraries
+These libraries were used. If you are working in the anaconda environment, you will not need the first three.
+```
+pip install pandas
+pip install numpy
+pip install requests
+pip install python-dotenv
+```
+
+## References
+  - **Spotify for developers:** https://developer.spotify.com/
