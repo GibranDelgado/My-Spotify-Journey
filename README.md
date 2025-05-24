@@ -1,4 +1,5 @@
 # My Spotify Journey
+Thank you for your interest in my project. This time I decided to emulate the famous annual Spotify Wrapped, with additional information layers to make an in-depth analysis of my streaming history and create a customized dashboard of my musical preferences, but with the advantage of using data from anytime of the year.
 
 ## Dashboard
 See the links below to visualize my dashboard:
@@ -24,7 +25,7 @@ This folder includes six Python scripts listed below:
 - **Spotify_methods:**  
   Contains methods used to retrieve complementary information about the tracks that make up the streaming history, using the classes provided by the "Spotify_utilities" script. These methods are divided in two categories:  
   - Those who search a specific track in a list of results.  
-  - Those that try to match as many tracks as posible from a list from a list of results.
+  - Those that try to match as many tracks as posible from a list of results.
 
 - **Spotify_data_extraction:**  
   In this script, additional track information is extracted in three stages:
@@ -53,10 +54,10 @@ This folder includes six Python scripts listed below:
   - Once the tables have been generated and filled, it's time to generate the view files. These are created reading every query included in the `queries.txt` file, then being executed in the database and then the results are saved as an Excel file.
 
 ## Get your own spotify data
-  - In the `"references"` section you will find a link to request your streaming history data. You will be able to download your data in a timelapse of five days. Once you have downloaded your data, you will get a `"my_spotify_data"` zip file. The only file you will need from there is the `"StreamingHistory_music_0"` json file. Copy it and place it in the `"Used_files"` folder.
-  - In order to use the Spotify Web API, you will have to create an account in Spotify to developers. 
+  - In the `"references"` section you will find a link to request your streaming history data. You will be able to download your data within five days. Once you have downloaded your data, you will get a `"my_spotify_data"` zip file. The only file you will need from there is the `"StreamingHistory_music_0"` json file. Copy it and place it in the `"Used_files"` folder.
+  - In order to use the Spotify Web API, you will have to create an account on Spotify to developers. 
       - In the `"references"` section you will find a link where you can log in with your spotify account.
-      - If you click into your username, a drop-down list will appear. Just click on `"dashboard"` and then create an app.
+      - If you click in your username, a drop-down list will appear. Just click on `"dashboard"` and then create an app.
       - At the moment of creating your app, in the `"Which API/SDKs are you planning to use?"` section, only select the `"Web API"` option. The rest of them will not be necessary.
       - I recommend you fill the `"Redirect URIs"` section like this: `"http://127.0.0.1:8000/callback"`.
   - Once you have created your app, go to `"settings"`, copy the "Client ID" and "Client secret" and then put them into a `".env"` file like this:
@@ -65,12 +66,12 @@ This folder includes six Python scripts listed below:
   - Then copy this file and place it in the "Used files" folder.
 
 ## About the use
-  - Execute the "Main_python.py" script. This going to create a new `"Spotify_results"` folder, with the additional information about the tracks, albums and artists of your streaming history.  
-  `In the Main_python script there's a variable called "diffHoursUTC". This represents the difference hours from the UTC.`  
+  - Execute the "Main_python.py" script. This is going to create a new `"Spotify_results"` folder, with the additional information about the tracks, albums and artists of your streaming history.  
+  `In the Main_python script there's a variable called "diffHoursUTC". This represents the hour difference from the UTC.`  
   `If you want to use the UTC timezone, set this value to 0; otherwise, set this value according to the location of your preference.`
 
-  - Execute the "Main_sqlite.py" script. This going to create a new "Queries_results" folder, with the necessary views to create your customized Spotify wrapped dashboard.  
-  `If you want to add or modify a query, don't forget to keep the numerology followed in the document.`
+  - Execute the "Main_sqlite.py" script. This is going to create a new "Queries_results" folder, with the necessary views to create your customized Spotify wrapped dashboard.  
+  `If you want to add or modify a query, don't forget to keep the numering format followed in the document.`
 
 ## Libraries
 These libraries were used. If you are working in the anaconda environment, you will not need the first three.
