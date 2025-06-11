@@ -1,5 +1,5 @@
 # My Spotify Journey
-Thank you for your interest in my project. This time I decided to emulate the famous annual Spotify Wrapped, with additional information layers to make an in-depth analysis of my streaming history and create a customized dashboard of my musical preferences, but with the advantage of using data from anytime of the year.
+Thank you for your interest in my project. This time I decided to emulate the famous annual Spotify Wrapped, with additional information layers to make an in-depth analysis of my streaming history and create a customized dashboard of my musical preferences, with the advantage of using data from anytime of the year.
 
 ## Dashboard
 See the links below to visualize my dashboard:
